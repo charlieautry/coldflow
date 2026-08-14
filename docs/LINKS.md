@@ -48,3 +48,14 @@ Reference docs for the coldflow rig project, grouped by what they're needed for.
 - Golioth: automated hardware testing using pytest: https://blog.golioth.io/automated-hardware-testing-using-pytest/
 - Arduino Due pytest HIL example: https://gitlab.com/ci-cd-examples/arduino-due-pytest-hil-example
 - Synnax docs (professional test-ops software concepts): https://docs.synnaxlabs.com/
+
+## Firmware spec / protocol examples (models to imitate)
+
+- Grbl v1.1 interface (serial protocol, ok/error codes, status reports, states): https://github.com/gnea/grbl/wiki/Grbl-v1.1-Interface
+- Grbl v1.1 commands (system + real-time command reference): https://github.com/gnea/grbl/wiki/Grbl-v1.1-Commands
+- Rigol DS1000Z programming guide (SCPI; per-command entry template): https://www.bitsavers.org/test_equipment/rigol/DS1000Z/PGA19109-1110_MSO1000Z_DS1000Z_Series_Digital_Oscilloscope_Programming_Guide_201807.pdf
+- MAVLink common message set (units + ranges on every field, heartbeat): https://mavlink.io/en/messages/common.html
+- Firmata protocol (compact protocol spec, semver'd core vs optional features): https://github.com/firmata/protocol/blob/master/protocol.md
+- Klipper MCU commands (host/MCU command set, capability discovery): https://github.com/Klipper3d/klipper/blob/master/docs/MCU_Commands.md
+- Waterloo Rocketry docs (student team's real message spec): https://docs.waterloorocketry.com/
+- RFC 2119 (MUST / SHOULD / MAY requirement keywords): https://www.rfc-editor.org/rfc/rfc2119
