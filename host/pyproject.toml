@@ -1,0 +1,22 @@
+[project]
+name = "teststand"
+version = "0.1.0"
+description = "Host-side driver, sequence runner, and test tooling for the coldflow rig"
+requires-python = ">=3.10"
+dependencies = [
+    "pyserial",
+    "pyyaml",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["teststand"]
