@@ -133,8 +133,34 @@ void StateMachine::tick(const Inputs& in, uint32_t nowMs) {
 
 void StateMachine::enter(State next) {
     state_ = next;
+    dwellArmed_ = false; // reset dwell on every state change
+
+    // im gonna use stacked case labels to be cool
+    switch (next) {
+        case State::Idle:
+        case State::Armed:
+        case State::Safe:
+            outputs_.pumpOn = false;
+            outputs_.ventOpen = true;
+            outputs_.valve = Outputs::ValveMode::Closed;
+            break;
+
+        case State::Pressurize:
+        case State::Hold:
+            outputs_.pumpOn = true;
+            outputs_.ventOpen = false;
+            outputs_.valve = Outputs::ValveMode::Pid; //coil energized to hold vent shut
+            break;
+
+        case State::Vent:
+        case State::Abort:
+            outputs_.pumpOn = false;
+            outputs_.ventOpen = true;
+            outputs_.valve = Outputs::ValveMode::Open;
+            break;
+    }
 }
 
 bool StateMachine::anyRedline(const Inputs& in) const {
-    return in.overpressure || in.loopFault;
+    return in.overpressure || in.loopFault || in.stale;
 }
