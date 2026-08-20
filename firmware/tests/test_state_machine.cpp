@@ -56,6 +56,27 @@ void testPressurizeFromArmed() {
     check(!sm.outputs().ventOpen, "Vent should be closed after Press command");
 }
 
+void testPressurizeReachesHoldAfterDwell() {
+    StateMachine sm;
+    Inputs in;
+
+    sm.handleCommand(Command::Clear, 0.0f, in, 0);
+    sm.handleCommand(Command::Arm, 0.0f, in, 0);
+    check(sm.handleCommand(Command::Set, 10.0f, in, 0) == CmdResult::Ok, "precondition: SET 10 accepted");
+    check(sm.handleCommand(Command::Press, 0.0f, in, 0) == CmdResult::Ok, "precondition: PRESS accepted");
+
+    in.psi = 10.0f;     // pressure arrives dead on the setpoint
+    sm.tick(in, 1000);  // first in-band tick arms the dwell timer
+    check(sm.state() == State::Pressurize, "still PRESSURIZE while the dwell runs");
+
+    sm.tick(in, 2999);  // 1999 ms elapsed
+    check(sm.state() == State::Pressurize, "still PRESSURIZE 1 ms before the dwell elapses");
+
+    sm.tick(in, 3000);  // 2000 ms elapsed
+    check(sm.state() == State::Hold, "HOLD after 2 s continuously in band");
+    check(sm.outputs().pumpOn, "pump stays on in HOLD");
+}
+
 // unhappy tests, paths that try to do something invalid
 
 void testInvalidPressurizeFromArmed() {
@@ -70,6 +91,20 @@ void testInvalidPressurizeFromArmed() {
     check(r == CmdResult::ErrRange, "Pressurize from Armed without setpoint should fail");
     check(sm.state() == State::Armed, "State should remain Armed after failed Press command");
 }
+
+void testSetRejectsOutOfRange() {
+    StateMachine sm;
+    Inputs in;
+
+    sm.handleCommand(Command::Clear, 0.0f, in, 0);
+    sm.handleCommand(Command::Arm, 0.0f, in, 0);
+    CmdResult r = sm.handleCommand(Command::Set, 50.0f, in, 0);
+
+    check(r == CmdResult::ErrRange, "SET 50 should be rejected with ErrRange");
+    check(!sm.hasSetpoint(), "rejected SET should not store a setpoint");
+    check(sm.state() == State::Armed, "state should not change on a rejected SET");
+}
+
 
 int main() {
     testArmFromIdle();
