@@ -87,18 +87,18 @@ void testDwellRestsWhenBandExited() {
     check(sm.handleCommand(Command::Press, 0.0f, in, 0) == CmdResult::Ok, "precondition: PRESS accepted");
 
     in.psi = 10.0f;
-    sm.tick(in,0);
+    sm.tick(in,0); // in band, dwell armed at 0 ms
 
-    in.psi = 3.0f;
-    sm.tick(in, 1000);
+    in.psi = 3.0f; // pressure drops out of band, dwell should reset
+    sm.tick(in, 1000); // this tick should reset the dwell timer
 
-    in.psi = 10.0f;
-    sm.tick(in, 1100);
+    in.psi = 10.0f; // back in band, dwell should re-arm at 1000 ms
+    sm.tick(in, 1100); // dwell armed at 1100 ms
 
-    sm.tick(in,3000);
+    sm.tick(in,3000); // only 1900 ms elapsed since re-arming, should not yet transition to HOLD
     check(sm.state() == State::Pressurize, "still PRESSURIZE after leaving band and returning before dwell elapsed");
 
-    sm.tick(in, 3100);
+    sm.tick(in, 3100); // 2000 ms elapsed since re-arming, should now transition to HOLD
     check(sm.state() == State::Hold, "HOLD after 2 s continuously in band");
 }
 
