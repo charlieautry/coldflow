@@ -28,11 +28,22 @@ Quick reading guide before the table dumps on you:
 | HOLD          | VENT command received                                                                 | none, venting is always allowed                                                                       | VENT       | off  | open   | open   | ok        |
 | VENT          | chamber pressure below 0.5 psi, held continuously for 2 s                             | none                                                                                                  | SAFE       | off  | open   | closed | auto      |
 | *any state* | ABORT command received, or redline tripped (psi >= 21, PT-101 loop fault, stale read) | none, abort is unconditional                                                                          | ABORT      | off  | open   | open   | ok / auto |
-| ABORT         | chamber pressure below 0.5 psi, held continuously for 2 s                             | none (fault stays latched)                                                                            | SAFE       | off  | open   | closed | auto      |
+| ABORT         | chamber pressure below 0.5 psi, held continuously for 2 s                             | pressure reading must be fresh, a stale read keeps us parked in ABORT (fault stays latched)          | SAFE       | off  | open   | closed | auto      |
 
 Any command that has no row for the current state gets rejected with `err` and changes
 nothing. No transition, no outputs, nothing. Sending `PRESS` while IDLE doesn't do anything
 except get told no.
+
+Some quick notes:
+
+- HOLD has no exit row for pressure drifting out of band, on purpose. HOLD and PRESSURIZE
+  command identical outputs, so a drop-back row would just flap the state name in telemetry
+  without touching a single actuator. Sagging pressure is the PID's job to fix and the
+  redline monitor's job to notice.
+- ABORT never rolls into SAFE on a stale reading. SAFE is the gate to CLEAR and re-arming,
+  and a frozen sensor doesn't get to hand out that permission. ABORT's outputs are already
+  the safe configuration, so waiting there costs nothing, and the mechanical gauge is the
+  tiebreaker if the transducer never comes back.
 
 ## Serial protocol
 
