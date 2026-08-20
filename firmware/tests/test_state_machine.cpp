@@ -47,7 +47,7 @@ void testPressurizeFromArmed() {
 
     sm.handleCommand(Command::Clear, 0.0f, in, 0);
     sm.handleCommand(Command::Arm, 0.0f, in, 0);
-    sm.handleCommand(Command::Set, 10.0f, in, 0); // Set a valid setpoint
+    check(sm.handleCommand(Command::Set, 10.0f, in, 0) == CmdResult::Ok, "precondition: SET 10 accepted");
     CmdResult r = sm.handleCommand(Command::Press, 0.0f, in, 0);
 
     check(r == CmdResult::Ok, "Pressurize from Armed should succeed");
@@ -105,12 +105,13 @@ void testSetRejectsOutOfRange() {
     check(sm.state() == State::Armed, "state should not change on a rejected SET");
 }
 
-
 int main() {
     testArmFromIdle();
     testDisarmFromArmed();
     testPressurizeFromArmed();
+    testPressurizeReachesHoldAfterDwell();
     testInvalidPressurizeFromArmed();
+    testSetRejectsOutOfRange();
 
     if (failures == 0) std::printf("all tests passed!\n");
     return failures ? 1 : 0;
