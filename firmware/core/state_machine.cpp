@@ -93,7 +93,7 @@ void StateMachine::tick(const Inputs& in, uint32_t nowMs) {
                     enter(State::Hold);
                 }
             } else {
-                dwellArmed_ = false; //so tha band holds continuously
+                dwellArmed_ = false;
             }
             break;
 
@@ -127,7 +127,7 @@ void StateMachine::tick(const Inputs& in, uint32_t nowMs) {
             break;
 
         default:
-            break; // for Idle, Armed, Safe, do nothing
+            break; // for idle, armed, safe, do nothing
     }
 }
 
@@ -149,7 +149,7 @@ void StateMachine::enter(State next) {
         case State::Hold:
             outputs_.pumpOn = true;
             outputs_.ventOpen = false;
-            outputs_.valve = Outputs::ValveMode::Pid; //coil energized to hold vent shut
+            outputs_.valve = Outputs::ValveMode::Pid; // coil energized to hold vent shut
             break;
 
         case State::Vent:
