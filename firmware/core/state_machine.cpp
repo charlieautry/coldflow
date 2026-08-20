@@ -76,10 +76,7 @@ CmdResult StateMachine::handleCommand(Command cmd, float arg, const Inputs& in, 
 }
 
 void StateMachine::tick(const Inputs& in, uint32_t nowMs) {
-    // placeholder
-
     //redline check first from any state, then a switch on state for the conditional rows
-
     if (anyRedline(in) && state_ != State::Abort) {
         faultLatched_ = true;
         enter(State::Abort);
@@ -104,18 +101,20 @@ void StateMachine::tick(const Inputs& in, uint32_t nowMs) {
             break;
 
         case State::Vent:
-            if (in.psi <= kEmptyPsi) {
+            if (in.psi < kEmptyPsi) {
                 if (!dwellArmed_) {
                     dwellArmed_ = true;
                     dwellStartMs_ = nowMs;
                 } else if (nowMs - dwellStartMs_ >= kDwellMs) {
                     enter(State::Safe);
-                }
+                } 
+            } else {
+                dwellArmed_ = false;
             }
             break;
 
         case State::Abort:
-            if (!in.stale && in.psi <= kEmptyPsi) {
+            if (!in.stale && in.psi < kEmptyPsi) {
                 if (!dwellArmed_) {
                     dwellArmed_ = true;
                     dwellStartMs_ = nowMs;
