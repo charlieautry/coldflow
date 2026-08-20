@@ -77,6 +77,31 @@ void testPressurizeReachesHoldAfterDwell() {
     check(sm.outputs().pumpOn, "pump stays on in HOLD");
 }
 
+void testDwellRestsWhenBandExited() {
+    StateMachine sm;
+    Inputs in;
+
+    sm.handleCommand(Command::Clear, 0.0f, in, 0);
+    sm.handleCommand(Command::Arm, 0.0f, in, 0);
+    check(sm.handleCommand(Command::Set, 10.0f, in, 0) == CmdResult::Ok, "precondition: SET 10 accepted");
+    check(sm.handleCommand(Command::Press, 0.0f, in, 0) == CmdResult::Ok, "precondition: PRESS accepted");
+
+    in.psi = 10.0f;
+    sm.tick(in,0);
+
+    in.psi = 3.0f;
+    sm.tick(in, 1000);
+
+    in.psi = 10.0f;
+    sm.tick(in, 1100);
+
+    sm.tick(in,3000);
+    check(sm.state() == State::Pressurize, "still PRESSURIZE after leaving band and returning before dwell elapsed");
+
+    sm.tick(in, 3100);
+    check(sm.state() == State::Hold, "HOLD after 2 s continuously in band");
+}
+
 // unhappy tests, paths that try to do something invalid
 
 void testInvalidPressurizeFromArmed() {
@@ -112,6 +137,7 @@ int main() {
     testPressurizeReachesHoldAfterDwell();
     testInvalidPressurizeFromArmed();
     testSetRejectsOutOfRange();
+    testDwellRestsWhenBandExited();
 
     if (failures == 0) std::printf("all tests passed!\n");
     return failures ? 1 : 0;
