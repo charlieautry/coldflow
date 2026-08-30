@@ -1,16 +1,7 @@
 #include "state_machine.h"
-#include <cstdio>
+#include "test_support.h"
 
-namespace {
-    int failures = 0;
-
-    void check(bool cond, const char* what) {
-        if (!cond) {
-            std::printf("FAIL: %s\n", what);
-            failures++;
-        }
-    }
-}
+using testsupport::check;
 
 // happy tests, paths that should succeed
 
@@ -77,7 +68,7 @@ void testPressurizeReachesHoldAfterDwell() {
     check(sm.outputs().pumpOn, "pump stays on in HOLD");
 }
 
-void testDwellRestsWhenBandExited() {
+void testDwellResetsWhenBandExited() {
     StateMachine sm;
     Inputs in;
 
@@ -130,15 +121,13 @@ void testSetRejectsOutOfRange() {
     check(sm.state() == State::Armed, "state should not change on a rejected SET");
 }
 
-int main() {
+void runStateMachineTests() {
+    testsupport::section("state_machine");
     testArmFromIdle();
     testDisarmFromArmed();
     testPressurizeFromArmed();
     testPressurizeReachesHoldAfterDwell();
     testInvalidPressurizeFromArmed();
     testSetRejectsOutOfRange();
-    testDwellRestsWhenBandExited();
-
-    if (failures == 0) std::printf("all tests passed!\n");
-    return failures ? 1 : 0;
+    testDwellResetsWhenBandExited();
 }
