@@ -179,3 +179,35 @@ Any fault with "causes abort = yes" trips the redline row of the transition tabl
 it latches, from any state, including IDLE and ARMED. The one exception to the panic is
 `tc_open`: temperature is a nice-to-have channel on this rig, so a flaky thermocouple gets
 reported and shrugged at rather than ending the test.
+
+## Resolver bolt-on
+
+The resolver module is an add-on that rides next to the core protocol without
+touching it: a second Pico (the "sim board") pretends to be a resolver on a
+spinning shaft, and the flight computer decodes the angle from three wires
+(sin, cos, excitation sign). Cut this section first if time runs out; nothing
+above depends on it.
+
+### Flight computer command
+
+**`ANGLE`**
+Valid in: all states
+Emits one json line with the current resolver decode, then responds. Handled
+outside the core command table, which is why it lives down here.
+Example: `ANGLE` returns `{"angle_deg":123.45,"amplitude":0.387,"valid":true}` then `ok`
+
+`valid` goes false when the envelope amplitude drops below the no-signal
+floor (resolver unplugged, sim board off), and the angle should be ignored.
+
+### Sim board commands
+
+The sim board enumerates as its own serial port and uses the same ok/err
+framing, so the pytest plumbing is shared:
+
+**`ANGLE <deg>`** parks the fake shaft at an angle. Returns `ok`.
+**`SPIN <deg/s>`** rotates continuously (negative = the other way). Returns `ok`.
+**`STOP`** freezes wherever it is. Returns `ok`.
+**`STATUS`** one json line (`{"angle_deg":...,"spin_dps":...}`), then `ok`.
+
+The pytest sweep is: command the sim to an angle, ask the flight computer to
+decode, assert they agree within a degree, repeat around the circle.

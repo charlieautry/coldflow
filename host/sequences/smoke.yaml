@@ -1,0 +1,12 @@
+name: smoke
+description: fastest possible proof the board is alive and sane, no water needed
+steps:
+  # preamble: reach IDLE from any state the board was left in
+  - {command: ABORT}
+  - {wait_state: SAFE, timeout_s: 30}
+  - {command: CLEAR}
+  - {command: RATE 20}
+  - {command: ARM}
+  - {check: {field: psi, max: 1.0}}
+  - {command: DISARM}
+  - {command: PRESS, expect: err state}

@@ -98,6 +98,9 @@ void StateMachine::tick(const Inputs& in, uint32_t nowMs) {
             break;
 
         case State::Hold:
+            // no out-of-band exit on purpose: outputs match PRESSURIZE, so a
+            // drop-back row would only flap the state name in telemetry. the
+            // PID fixes sag, the redline monitor catches real trouble.
             break;
 
         case State::Vent:
