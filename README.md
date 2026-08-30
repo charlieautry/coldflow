@@ -42,7 +42,31 @@ The physical rig is a loop: reservoir -> pump -> check valve -> a small PVC pres
 
 Not ruining the carpet is a layers thing: operate at 5-15 psi, software aborts around 21, the pressure transducer maxes out at 29, and the pump physically can't push past its own relief somewhere in the 30-40 range. Software catches it first, and if software embarrasses itself, physics is standing behind it with the actual last word.
 
-## Building and running the tests
+## What's in the repo
+
+```
+firmware/
+  core/          the brain: state machine, PID, sensors, protocol, resolver
+                 decoder, and the Rig glue. zero hardware includes, on purpose
+  src/           the only code that touches pins: PicoHal, servo driver, main loop
+  resolver_sim/  firmware for the second pico that pretends to be a resolver
+  tests/         off-target unit tests, run on the desktop via ctest
+host/
+  teststand/     the python package: driver, csv logging, fake board,
+                 sequence runner, redline monitor, data review tooling
+  tests/         the pytest suite (runs with zero hardware by default)
+  sequences/     test procedures as YAML data
+docs/            firmware spec, host harness reference, wiring, bring-up, P&ID
+cad/             OpenSCAD source for the printed parts (brackets, coupling, tiles)
+```
+
+The architecture rule that makes it all hang together: `firmware/core/` never
+includes an SDK header, and everything hardware-shaped goes through one small
+`Hal` interface. That's why the same state machine that runs the rig also runs
+on my desktop against a fake, and why the pytest suite has a `FakeBoard` that
+lets the entire host stack pass with the rig unplugged.
+
+## Building and running the firmware tests
 
 The firmware logic in `firmware/core/` is written so it has zero hardware dependencies, which means the unit tests compile and run on a normal desktop, no Pico required. This is on purpose: I can prove the state machine follows its spec before any dreaded water or electricity gets involved.
 
@@ -58,4 +82,70 @@ First command configures the build (you only need it once, or again if you add n
 
 The `-C Debug` on the ctest line is there because Visual Studio's generator is multi-config, one build folder holds Debug and Release at the same time, so ctest makes you pick one. Leave it off and you get a very unhelpful "Test not available without configuration" error. Ask me how I know :)
 
-The actual on-Pico firmware build isn't wired up yet (needs the Pico SDK pulled in), and the pytest suite doesn't exist yet either. Both are coming, this section will grow.
+## Building the actual Pico firmware
+
+This needs the Pico SDK and the ARM toolchain installed, with `PICO_SDK_PATH`
+set in the environment (`pico_sdk_import.cmake` is already in `firmware/`).
+Then, from `firmware/`:
+
+```
+cmake -B build
+cmake --build build
+```
+
+That produces two flashables: `coldflow.uf2` (the flight computer) and
+`resolver_sim.uf2` (the second pico). Hold BOOTSEL, plug in, drag the uf2 on.
+Fair warning: the off-target tests run on every change, but the on-target
+build only gets exercised when I'm at the bench with the toolchain, so if you
+somehow have this cloned and it doesn't compile, that's why.
+
+## The host side
+
+One-time setup, from `host/`:
+
+```
+python -m venv .venv
+.venv\Scripts\activate        (or source .venv/bin/activate)
+pip install -e .[dev]
+```
+
+Then the fun part. The whole pytest suite runs against a simulated board by
+default, no hardware, about a second:
+
+```
+pytest
+```
+
+Point the same suite at the real rig by naming its serial port:
+
+```
+pytest --port COM5
+```
+
+Test procedures are YAML files executed by the sequence runner, watched by
+redlines that abort independently of the sequence:
+
+```
+python -m teststand run sequences/hold_10psi.yaml --fake
+python -m teststand run sequences/hold_10psi.yaml --port COM5
+```
+
+Every run logs a DAQ-style CSV under `data/`, and the review tool turns one
+back into judgment (stats, state timeline, redline proximity, settling time,
+a plot):
+
+```
+python -m teststand review data/hold_10psi_20260830_183000.csv --plot out.png
+```
+
+The details of all of it are in `docs/host-harness.md`.
+
+## Where things stand
+
+Software: state machine, PID, sensor conversion, serial protocol, resolver
+decoder, and the rig glue are all written and covered by the off-target suite
+(242 checks) plus the host pytest suite (71 tests). The physical rig is
+assembled-in-progress on the bench; wiring and bring-up live in `docs/`, and
+the PID gains in the firmware are placeholder values until the water loop
+gets tuned for real. Expect the performance numbers in
+`test_pid_performance.py` to tighten once that happens.
