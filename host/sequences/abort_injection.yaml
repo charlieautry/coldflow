@@ -1,0 +1,15 @@
+name: abort_injection
+description: prove the abort path end to end with an injected fault
+steps:
+  # preamble: reach IDLE from any state the board was left in
+  - {command: ABORT}
+  - {wait_state: SAFE, timeout_s: 30}
+  - {command: CLEAR}
+  - {command: RATE 20}
+  - {command: ARM}
+  - {command: INJECT overpressure}
+  - {wait_state: ABORT, timeout_s: 5}
+  - {check: {fault: overpressure}}
+  - {check: {field: pump, max: 0.0}}
+  - {wait_state: SAFE, timeout_s: 30}
+  - {command: CLEAR}

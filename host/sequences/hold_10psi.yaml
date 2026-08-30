@@ -1,0 +1,18 @@
+name: hold_10psi
+description: pressurize to 10 psi, prove the hold, come home through VENT
+redlines:
+  - {field: psi, max: 18}
+steps:
+  # preamble: reach IDLE from any state the board was left in
+  - {command: ABORT}
+  - {wait_state: SAFE, timeout_s: 30}
+  - {command: CLEAR}
+  - {command: RATE 20}
+  - {command: ARM}
+  - {command: SET 10}
+  - {command: PRESS}
+  - {wait_state: HOLD, timeout_s: 90}
+  - {hold_s: 5}
+  - {check: {field: psi, min: 9.5, max: 10.5}}
+  - {command: VENT}
+  - {wait_state: SAFE, timeout_s: 30}
